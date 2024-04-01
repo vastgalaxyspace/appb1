@@ -2,6 +2,7 @@ package com.example.bloodunityapp;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.view.Gravity;
 import android.view.View;
 
 import androidx.activity.OnBackPressedCallback;
@@ -27,26 +28,35 @@ public class MainActivity extends AppCompatActivity {
 
         setContentView(R.layout.activity_main);
 
-        drawerLayout=findViewById(R.id.main);
+        toolbar = findViewById(R.id.toolbar);
+        drawerLayout=findViewById(R.id.drawerlayout);
+
         navigationView=findViewById(R.id.navigation);
-        cardView=findViewById(R.id.donate_cardview);
-        cardView.setOnClickListener(new View.OnClickListener() {
+
+        toolbar.setNavigationOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Intent intent= new Intent(MainActivity.this, DontateActivity.class);
-                startActivity(intent);
-                finish();
+                drawerLayout.openDrawer(GravityCompat.START);
             }
         });
-        toolbar=findViewById(R.id.toolbar);
-
-        setSupportActionBar(toolbar);
-
-        ActionBarDrawerToggle toggle=new ActionBarDrawerToggle(this,drawerLayout,toolbar,R.string.opendrawer,R.string.closedrawer);
-        drawerLayout.addDrawerListener(toggle);
-
-        toggle.syncState();
-
+//        cardView=findViewById(R.id.donate_cardview);
+//        cardView.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View view) {
+//                Intent intent= new Intent(MainActivity.this, DontateActivity.class);
+//                startActivity(intent);
+//                finish();
+//            }
+//        });
+//        toolbar=findViewById(R.id.toolbar);
+//
+//        setSupportActionBar(toolbar);
+//
+//        ActionBarDrawerToggle toggle=new ActionBarDrawerToggle(this,drawerLayout,toolbar,R.string.opendrawer,R.string.closedrawer);
+//        drawerLayout.addDrawerListener(toggle);
+//
+//        toggle.syncState();
+//
         navigationView.setNavigationItemSelectedListener(menuItem -> {
             System.out.println("clickk-------------------------");
             int id=menuItem.getItemId();
@@ -70,19 +80,19 @@ public class MainActivity extends AppCompatActivity {
 
             return true;
         });
-
-        final OnBackPressedDispatcher dispatcher = getOnBackPressedDispatcher();
-        dispatcher.addCallback(this, new OnBackPressedCallback(true) {
-            @Override
-            public void handleOnBackPressed() {
-                if (drawerLayout.isDrawerOpen(GravityCompat.START)) {
-                    drawerLayout.closeDrawer(GravityCompat.START);
-                } else {
-                    setEnabled(false);
-                    dispatcher.onBackPressed();
-                }
-            }
-        });
+//
+//        final OnBackPressedDispatcher dispatcher = getOnBackPressedDispatcher();
+//        dispatcher.addCallback(this, new OnBackPressedCallback(true) {
+//            @Override
+//            public void handleOnBackPressed() {
+//                if (drawerLayout.isDrawerOpen(GravityCompat.START)) {
+//                    drawerLayout.closeDrawer(GravityCompat.START);
+//                } else {
+//                    setEnabled(false);
+//                    dispatcher.onBackPressed();
+//                }
+//            }
+//        });
+//    }
     }
-
 }
