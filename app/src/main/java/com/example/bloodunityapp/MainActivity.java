@@ -39,15 +39,15 @@ public class MainActivity extends AppCompatActivity {
                 drawerLayout.openDrawer(GravityCompat.START);
             }
         });
-//        cardView=findViewById(R.id.donate_cardview);
-//        cardView.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View view) {
-//                Intent intent= new Intent(MainActivity.this, DontateActivity.class);
-//                startActivity(intent);
-//                finish();
-//            }
-//        });
+        cardView=findViewById(R.id.donate_cardview);
+        cardView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent= new Intent(MainActivity.this, DontateActivity.class);
+                startActivity(intent);
+                finish();
+            }
+        });
 //        toolbar=findViewById(R.id.toolbar);
 //
 //        setSupportActionBar(toolbar);
