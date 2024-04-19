@@ -4,6 +4,7 @@ import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -30,6 +31,7 @@ import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.messaging.FirebaseMessaging;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -37,12 +39,12 @@ import java.util.Objects;
 
 public class SignupActivity extends AppCompatActivity {
     private Button registerbtn;
-    private EditText emailreg,phonereg,passreg,cpassreg;
+    private EditText emailreg, phonereg, passreg, cpassreg;
     private FirebaseAuth firebaseAuth;
     private FirebaseAuth.AuthStateListener authStateListener;
     private FirebaseUser currentuser;
-    private FirebaseFirestore db= FirebaseFirestore.getInstance();
-    private final CollectionReference collectionReference=db.collection("Users");
+    private FirebaseFirestore db = FirebaseFirestore.getInstance();
+    private final CollectionReference collectionReference = db.collection("Users");
     private ProgressBar progressBar;
 
     @Override
@@ -56,25 +58,24 @@ public class SignupActivity extends AppCompatActivity {
             return insets;
         });
 
+        emailreg = findViewById(R.id.emailregister);
+        phonereg = findViewById(R.id.phoneregister);
+        passreg = findViewById(R.id.passwordregister);
+        cpassreg = findViewById(R.id.confirmpasswordregister);
+        registerbtn = findViewById(R.id.registerbtn11);
+        progressBar = findViewById(R.id.progressBar1);
 
-        emailreg=findViewById(R.id.emailregister);
-        phonereg=findViewById(R.id.phoneregister);
-        passreg=findViewById(R.id.passwordregister);
-        cpassreg=findViewById(R.id.confirmpasswordregister);
-        registerbtn=findViewById(R.id.registerbtn11);
-        progressBar=findViewById(R.id.progressBar1);
+        firebaseAuth = FirebaseAuth.getInstance();
 
-        firebaseAuth=FirebaseAuth.getInstance();
-
-        authStateListener=new FirebaseAuth.AuthStateListener() {
+        authStateListener = new FirebaseAuth.AuthStateListener() {
             @Override
             public void onAuthStateChanged(@NonNull FirebaseAuth firebaseAuth) {
-                currentuser=firebaseAuth.getCurrentUser();
+                currentuser = firebaseAuth.getCurrentUser();
 
-                if(currentuser!=null){
+                if (currentuser != null) {
                     //user already logged in
 
-                }else {
+                } else {
                     //not user it
                 }
             }
@@ -83,78 +84,91 @@ public class SignupActivity extends AppCompatActivity {
         registerbtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if(!TextUtils.isEmpty(emailreg.getText().toString()) &&
+                if (!TextUtils.isEmpty(emailreg.getText().toString()) &&
                         !TextUtils.isEmpty(passreg.getText().toString()) &&
                         !TextUtils.isEmpty(cpassreg.getText().toString()) &&
-                        !TextUtils.isEmpty(phonereg.getText().toString())){
+                        !TextUtils.isEmpty(phonereg.getText().toString())) {
 
-                    String email=emailreg.getText().toString().trim();
-                    String phone=phonereg.getText().toString().trim();
-                    String password=passreg.getText().toString().trim();
-                    String cpassword=cpassreg.getText().toString().trim();
+                    String email = emailreg.getText().toString().trim();
+                    String phone = phonereg.getText().toString().trim();
+                    String password = passreg.getText().toString().trim();
+                    String cpassword = cpassreg.getText().toString().trim();
 
-                    if(password.equals(cpassword)){
+                    if (password.equals(cpassword)) {
                         createuseremailaccount(email, password, phone);
-                    }else {
-                        Toast.makeText(SignupActivity.this,"password do not match",Toast.LENGTH_LONG).show();
+                    } else {
+                        Toast.makeText(SignupActivity.this, "password do not match", Toast.LENGTH_LONG).show();
                     }
 
-                }else {
-                    Toast.makeText(SignupActivity.this,"Empty fields not allowed",Toast.LENGTH_LONG).show();
+                } else {
+                    Toast.makeText(SignupActivity.this, "Empty fields not allowed", Toast.LENGTH_LONG).show();
                 }
             }
         });
     }
-    private Void createuseremailaccount(String email,String password,String phone){
 
-        if(!TextUtils.isEmpty(email) && !TextUtils.isEmpty(password) && !TextUtils.isEmpty(phone)){
+    private void createuseremailaccount(String email, String password, String phone) {
+        if (!TextUtils.isEmpty(email) && !TextUtils.isEmpty(password) && !TextUtils.isEmpty(phone)) {
             progressBar.setVisibility(View.VISIBLE);
-            firebaseAuth.createUserWithEmailAndPassword(email,password)
+            firebaseAuth.createUserWithEmailAndPassword(email, password)
                     .addOnCompleteListener(new OnCompleteListener<AuthResult>() {
                         @Override
                         public void onComplete(@NonNull Task<AuthResult> task) {
-                            if(task.isSuccessful()){
+                            if (task.isSuccessful()) {
                                 currentuser = firebaseAuth.getCurrentUser();
                                 assert currentuser != null;
                                 final String currentuserid = currentuser.getUid();
 
-                                Map<String, String> userobj = new HashMap<>();
-                                userobj.put("UserId", currentuserid);
-                                userobj.put("phone", phone);
-
-
-
-                                collectionReference.add(userobj)
-                                        .addOnSuccessListener(new OnSuccessListener<DocumentReference>() {
+                                // Get the FCM token
+                                FirebaseMessaging.getInstance().getToken()
+                                        .addOnCompleteListener(new OnCompleteListener<String>() {
                                             @Override
-                                            public void onSuccess(DocumentReference documentReference) {
-                                                documentReference.get()
-                                                        .addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
+                                            public void onComplete(@NonNull Task<String> task) {
+                                                if (!task.isSuccessful()) {
+                                                    Log.w("my", "Fetching FCM registration token failed", task.getException());
+                                                    return;
+                                                }
+
+                                                // Get new FCM registration token
+                                                String token = task.getResult();
+
+                                                Map<String, String> userobj = new HashMap<>();
+                                                userobj.put("UserId", currentuserid);
+                                                userobj.put("phone", phone);
+                                                userobj.put("fcmToken", token);  // Add the FCM token to the map
+
+                                                collectionReference.add(userobj)
+                                                        .addOnSuccessListener(new OnSuccessListener<DocumentReference>() {
                                                             @Override
-                                                            public void onComplete(@NonNull Task<DocumentSnapshot> task) {
-                                                                if(task.getResult().exists()){
-                                                                    progressBar.setVisibility(View.INVISIBLE);
-                                                                    String name=task.getResult().getString("phone");
-                                                                    Intent intent=new Intent(SignupActivity.this, MainActivity.class);
-                                                                    intent.putExtra("phone",phone);
-                                                                    intent.putExtra("userid",currentuserid);
-                                                                    startActivity(intent);
-                                                                }else{
-                                                                    progressBar.setVisibility(View.INVISIBLE);
-                                                                }
+                                                            public void onSuccess(DocumentReference documentReference) {
+                                                                documentReference.get()
+                                                                        .addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
+                                                                            @Override
+                                                                            public void onComplete(@NonNull Task<DocumentSnapshot> task) {
+                                                                                if (Objects.requireNonNull(task.getResult()).exists()) {
+                                                                                    progressBar.setVisibility(View.INVISIBLE);
+                                                                                    String name = task.getResult().getString("phone");
+                                                                                    Intent intent = new Intent(SignupActivity.this, MainActivity.class);
+                                                                                    intent.putExtra("phone", phone);
+                                                                                    intent.putExtra("userid", currentuserid);
+                                                                                    startActivity(intent);
+                                                                                } else {
+                                                                                    progressBar.setVisibility(View.INVISIBLE);
+                                                                                }
+                                                                            }
+                                                                        });
+                                                            }
+                                                        })
+                                                        .addOnFailureListener(new OnFailureListener() {
+                                                            @Override
+                                                            public void onFailure(@NonNull Exception e) {
+                                                                progressBar.setVisibility(View.INVISIBLE);
+                                                                Toast.makeText(SignupActivity.this, "Firestore Error: " + e.getMessage(), Toast.LENGTH_LONG).show();
                                                             }
                                                         });
                                             }
-                                        })
-                                        .addOnFailureListener(new OnFailureListener() {
-                                            @Override
-                                            public void onFailure(@NonNull Exception e) {
-                                                progressBar.setVisibility(View.INVISIBLE);
-                                                Toast.makeText(SignupActivity.this, "Firestore Error: " + e.getMessage(), Toast.LENGTH_LONG).show();
-                                            }
                                         });
-
-                            }else {
+                            } else {
                                 progressBar.setVisibility(View.INVISIBLE);
                                 Toast.makeText(SignupActivity.this, "Authentication failed: " + Objects.requireNonNull(task.getException()).getMessage(), Toast.LENGTH_LONG).show();
                             }
@@ -164,19 +178,16 @@ public class SignupActivity extends AppCompatActivity {
                         @Override
                         public void onFailure(@NonNull Exception e) {
                             progressBar.setVisibility(View.INVISIBLE);
-                            Toast.makeText(SignupActivity.this,"Registration error : "+e.getMessage(),Toast.LENGTH_LONG).show();
-
+                            Toast.makeText(SignupActivity.this, "Registration error : " + e.getMessage(), Toast.LENGTH_LONG).show();
                         }
                     });
         }
-
-        return null;
     }
 
     @Override
     protected void onStart() {
         super.onStart();
-        currentuser=firebaseAuth.getCurrentUser();
+        currentuser = firebaseAuth.getCurrentUser();
         firebaseAuth.addAuthStateListener(authStateListener);
     }
 }
